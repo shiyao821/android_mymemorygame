@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "903738219161",
+    "project_id": "my-memory-app-cf614",
+    "storage_bucket": "my-memory-app-cf614.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:903738219161:android:3ac18911b0d603a69a3608",
+        "android_client_info": {
+          "package_name": "com.example.mymemorytutorial"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "903738219161-ll3dk65navnpumaeu6l0h229mds8oj83.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwV5LVSbTAy7Ahzo98TPBEtZijTJQzLyg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "903738219161-ll3dk65navnpumaeu6l0h229mds8oj83.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

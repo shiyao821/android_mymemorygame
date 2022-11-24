@@ -25,6 +25,9 @@ import com.example.mymemorytutorial.utils.BitmapScaler
 import com.example.mymemorytutorial.utils.EXTRA_BOARD_SIZE
 import com.example.mymemorytutorial.utils.isPermissionGranted
 import com.example.mymemorytutorial.utils.requestPermission
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import java.io.ByteArrayOutputStream
 
 class CreateActivity : AppCompatActivity() {
@@ -46,6 +49,8 @@ class CreateActivity : AppCompatActivity() {
     private lateinit var adapter: ImagePickerAdapter
     private var numImagesRequired = -1
     private val chosenImageUris = mutableListOf<Uri>()
+    private val storage = Firebase.storage
+    private val db = Firebase.firestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,11 +152,41 @@ class CreateActivity : AppCompatActivity() {
     }
 
     private fun saveDataToFirebase() {
+        val customGameName = etGameName.text.toString()
         Log.i(TAG, "saveDataToFirebase")
+        var didEncounterError = false
+        val uploadedImageUrls = mutableListOf<String>()
         for ((index, photoUri) in chosenImageUris.withIndex()) {
             // need to compress photos first before uploading
             val imageByteArray = getImageByteArray(photoUri)
+            val filePath = "images/$customGameName/${System.currentTimeMillis()}-$index.jpg"
+            val photoReference = storage.reference.child(filePath)
+            photoReference.putBytes(imageByteArray)
+                .continueWithTask { photoUploadsTask ->
+                    Log.i(TAG, "Uploaded bytes: ${photoUploadsTask.result?.bytesTransferred}")
+                    photoReference.downloadUrl
+                }.addOnCompleteListener { downloadUrlTask ->
+                    if (!downloadUrlTask.isSuccessful) {
+                        Log.e(TAG, "Exception with Firebase storage, ", downloadUrlTask.exception)
+                        Toast.makeText(this, "Failed to upload image", Toast.LENGTH_SHORT).show()
+                        didEncounterError = true
+                        return@addOnCompleteListener
+                    }
+                    if (didEncounterError) {
+                        return@addOnCompleteListener
+                    }
+                    var downloadUrl = downloadUrlTask.result.toString()
+                    uploadedImageUrls.add(downloadUrl)
+                    Log.i(TAG, "Finished uploading $photoUri, num uploaded: ${uploadedImageUrls.size}")
+                    if (uploadedImageUrls.size == chosenImageUris.size) {
+                        handleAllImagesUploaded(customGameName, uploadedImageUrls)
+                    }
+                }
         }
+    }
+
+    private fun handleAllImagesUploaded(gameName: String, uploadedImageUrls: MutableList<String>) {
+        TODO("Not yet implemented")
     }
 
     private fun getImageByteArray(photoUri: Uri): ByteArray {
