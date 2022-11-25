@@ -2,6 +2,7 @@ package com.example.mymemorytutorial.utils
 
 import com.example.mymemorytutorial.R
 
+const val EXTRA_GAME_NAME = "EXTRA_GAME_NAME"
 const val EXTRA_BOARD_SIZE = "EXTRA_BOARD_SIZE"
 
 val DEFAULT_ICONS = listOf(
