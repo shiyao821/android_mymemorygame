@@ -1,6 +1,7 @@
 package com.example.mymemorytutorial
 
 import android.animation.ArgbEvaluator
+import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -18,8 +19,13 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mymemorytutorial.models.BoardSize
 import com.example.mymemorytutorial.models.MemoryGame
+import com.example.mymemorytutorial.models.UserImageList
 import com.example.mymemorytutorial.utils.EXTRA_BOARD_SIZE
+import com.example.mymemorytutorial.utils.EXTRA_GAME_NAME
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,7 +40,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvNumPairs: TextView
     private lateinit var memoryGame: MemoryGame
     private lateinit var adapter: MemoryBoardAdapter
+    private var gameName: String? = null
+    private var gameImages: List<String>? = null
     private var boardSize = BoardSize.EASY
+    private val storage = Firebase.storage
+    private val db = Firebase.firestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +88,36 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == CREATE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val customGameName = data?.getStringExtra(EXTRA_GAME_NAME)
+            if (customGameName == null) {
+                Log.e(TAG, "Got null custom game name from CreateActivity")
+                return
+            }
+            downloadGame(customGameName)
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun downloadGame(downloadedGameName: String) {
+        db.collection("games").document(downloadedGameName).get().addOnSuccessListener { document ->
+            val userImageList = document.toObject(UserImageList::class.java)
+            if (userImageList?.images == null) {
+                Log.e(TAG, "Invalid custom game data from Firestore")
+                Snackbar.make(clRoot, "Sorry, we couldn't find this game '$gameName'", Snackbar.LENGTH_LONG).show()
+                return@addOnSuccessListener
+            }
+            val numCards = userImageList.images.size * 2
+            boardSize = BoardSize.getByValue(numCards)
+            gameImages = userImageList.images
+            gameName = downloadedGameName
+            setupBoard()
+        }.addOnFailureListener { exception ->
+            Log.e(TAG, "Exception retrieving game", exception)
+        }
+    }
+
     private fun showCreationDialogue() {
         val boardSizeView = LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
         val radioGroupSize = boardSizeView.findViewById<RadioGroup>(R.id.radioGroup)
@@ -108,6 +148,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.rbMedium -> BoardSize.MEDIUM
                 else -> BoardSize.HARD
             }
+            gameName = null
+            gameImages = null
             setupBoard()
         })
     }
@@ -123,6 +165,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupBoard() {
+        supportActionBar?.title = gameName ?: getString(R.string.app_name)
         when (boardSize) {
             BoardSize.EASY -> {
                 tvNumMoves.text = "Easy: 4 x 2"
@@ -139,7 +182,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         tvNumPairs.setTextColor(ContextCompat.getColor(this, R.color.color_progress_none))
-        memoryGame = MemoryGame(boardSize)
+        memoryGame = MemoryGame(boardSize, gameImages)
         adapter = MemoryBoardAdapter(this, boardSize, memoryGame.cards, object: MemoryBoardAdapter.CardClickListener {
             override fun onCardClicked(position: Int) {
                 updateGameWithFlip(position)
