@@ -3,6 +3,7 @@ package com.example.mymemorytutorial
 import android.animation.ArgbEvaluator
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -24,6 +25,7 @@ import com.example.mymemorytutorial.models.MemoryGame
 import com.example.mymemorytutorial.models.UserImageList
 import com.example.mymemorytutorial.utils.EXTRA_BOARD_SIZE
 import com.example.mymemorytutorial.utils.EXTRA_GAME_NAME
+import com.github.jinatonic.confetti.CommonConfetti
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -234,6 +236,7 @@ class MainActivity : AppCompatActivity() {
             tvNumPairs.setTextColor(color)
             if (memoryGame.haveWonGame()) {
                 Snackbar.make(clRoot, "You Won! Congratulations! :D", Snackbar.LENGTH_LONG).show()
+                CommonConfetti.rainingConfetti(clRoot, intArrayOf(Color.YELLOW, Color.RED, Color.MAGENTA)).oneShot()
             }
         }
         tvNumMoves.text = "Moves: ${memoryGame.getNumMoves()}"
